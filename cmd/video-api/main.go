@@ -12,33 +12,42 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
-	"github.com/trieuvy/video-ranking/internal/database"
+	httpSwagger "github.com/swaggo/http-swagger"
+	"github.com/trieuvy/video-ranking/configs/database"
+	"github.com/trieuvy/video-ranking/configs/redis"
+	_ "github.com/trieuvy/video-ranking/docs"
 	"github.com/trieuvy/video-ranking/internal/handlers"
 	"github.com/trieuvy/video-ranking/internal/models"
-	"github.com/trieuvy/video-ranking/internal/redis"
 	"github.com/trieuvy/video-ranking/internal/repositories"
 	"github.com/trieuvy/video-ranking/internal/services"
 )
 
 func main() {
 	// Load environment variables
-	if err := godotenv.Load(); err != nil {
+	if err := godotenv.Load("../../.env"); err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
+	log.Println("Environment variables loaded successfully")
 	// Initialize Redis client
 	redis, err := redis.ConnectRedis()
 	if err != nil {
 		log.Fatalf("Error connecting to Redis: %v", err)
+		return
 	}
+	log.Println("Redis client initialized successfully")
 	// Initialize MySQL database connection
-	db,err := database.ConnectDatabase()
+	db, err := database.ConnectDatabase()
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
+		return
 	}
+	log.Println("Database connection established successfully")
 	// Migrate database schema
 	if err := db.AutoMigrate(&models.Video{}, &models.User{}, &models.Interaction{}); err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
+		return
 	}
+	log.Println("Database migration completed successfully")
 	// Initialize repositories
 	videoRepo := repositories.NewVideoRepository(db)
 	userRepo := repositories.NewUserRepository(db)
@@ -61,6 +70,14 @@ func main() {
 	videoHandler.RegisterRoutes(r)
 	userHandler.RegisterRoutes(r)
 	interactionHandler.RegisterRoutes(r)
+
+	// Swagger documentation
+	r.PathPrefix("/swagger/").Handler(httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"),
+		httpSwagger.DeepLinking(true),
+		httpSwagger.DocExpansion("none"),
+		httpSwagger.DomID("swagger-ui"),
+	))
 
 	// Configure CORS
 	c := cors.New(cors.Options{

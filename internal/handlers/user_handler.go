@@ -12,6 +12,8 @@ import (
 )
 
 // UserHandler handles HTTP requests for users
+// @title User API
+// @description API for managing users
 type UserHandler struct {
 	userService *services.UserService
 }
@@ -22,6 +24,16 @@ func NewUserHandler(userService *services.UserService) *UserHandler {
 }
 
 // CreateUser handles the creation of a new user
+// @Summary Create a new user
+// @Description Create a new user in the system
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user body models.User true "User object"
+// @Success 200 {object} models.User
+// @Failure 400 {string} string "Bad request"
+// @Failure 500 {string} string "Internal server error"
+// @Router /users [post]
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
@@ -39,6 +51,16 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetUser handles retrieving a user by ID
+// @Summary Get a user by ID
+// @Description Get details of a specific user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} models.User
+// @Failure 400 {string} string "Invalid user ID"
+// @Failure 404 {string} string "User not found"
+// @Router /users/{id} [get]
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := uuid.Parse(vars["id"])
@@ -58,6 +80,17 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateUser handles updating an existing user
+// @Summary Update a user
+// @Description Update an existing user's information
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Param user body models.User true "Updated user object"
+// @Success 200 {object} models.User
+// @Failure 400 {string} string "Invalid user ID or data"
+// @Failure 500 {string} string "Internal server error"
+// @Router /users/{id} [put]
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := uuid.Parse(vars["id"])
@@ -83,6 +116,16 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteUser handles removing a user
+// @Summary Delete a user
+// @Description Delete an existing user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 204 "No Content"
+// @Failure 400 {string} string "Invalid user ID"
+// @Failure 500 {string} string "Internal server error"
+// @Router /users/{id} [delete]
 func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := uuid.Parse(vars["id"])
@@ -100,6 +143,16 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // ListUsers handles retrieving a list of users with pagination
+// @Summary List all users
+// @Description Get a paginated list of all users
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number"
+// @Param pageSize query int false "Number of items per page"
+// @Success 200 {array} models.User
+// @Failure 500 {string} string "Internal server error"
+// @Router /users [get]
 func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
 	pageSize, _ := strconv.Atoi(r.URL.Query().Get("pageSize"))

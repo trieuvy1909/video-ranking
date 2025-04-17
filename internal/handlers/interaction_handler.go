@@ -12,9 +12,11 @@ import (
 )
 
 // InteractionHandler handles HTTP requests for interactions
+// @title Interaction API
+// @description API for managing video interactions
 type InteractionHandler struct {
-	interactionService *services.InteractionService;
-	videoService       *services.VideoService;
+	interactionService *services.InteractionService
+	videoService       *services.VideoService
 }
 
 // NewInteractionHandler creates a new interaction handler
@@ -26,6 +28,15 @@ func NewInteractionHandler(interactionService *services.InteractionService, vide
 }
 
 // CreateInteraction handles the creation of a new interaction
+// @Summary Create a new interaction
+// @Description Create a new interaction between a user and a video
+// @Tags interactions
+// @Accept json
+// @Produce json
+// @Param interaction body models.Interaction true "Interaction object"
+// @Success 200 {object} models.Interaction
+// @Failure 400 {string} string "Bad request"
+// @Router /interactions [post]
 func (h *InteractionHandler) CreateInteraction(w http.ResponseWriter, r *http.Request) {
 	var interaction models.Interaction
 	if err := json.NewDecoder(r.Body).Decode(&interaction); err != nil {
@@ -38,17 +49,17 @@ func (h *InteractionHandler) CreateInteraction(w http.ResponseWriter, r *http.Re
 		return
 	}
 	if interaction.Type == models.Like {
-		if err := h.videoService.ChangeLikesAmount(interaction.VideoID,1); err != nil {
+		if err := h.videoService.ChangeLikesAmount(interaction.VideoID, 1); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 	} else if interaction.Type == models.View {
-		if err := h.videoService.ChangeViewsAmount(interaction.VideoID,1); err != nil {
+		if err := h.videoService.ChangeViewsAmount(interaction.VideoID, 1); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 	} else if interaction.Type == models.Comment {
-		if err := h.videoService.ChangeCommentsAmount(interaction.VideoID,1); err != nil {
+		if err := h.videoService.ChangeCommentsAmount(interaction.VideoID, 1); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -59,6 +70,16 @@ func (h *InteractionHandler) CreateInteraction(w http.ResponseWriter, r *http.Re
 }
 
 // GetInteraction handles retrieving an interaction by ID
+// @Summary Get an interaction by ID
+// @Description Get details of a specific interaction
+// @Tags interactions
+// @Accept json
+// @Produce json
+// @Param id path string true "Interaction ID"
+// @Success 200 {object} models.Interaction
+// @Failure 400 {string} string "Invalid interaction ID"
+// @Failure 404 {string} string "Interaction not found"
+// @Router /interactions/{id} [get]
 func (h *InteractionHandler) GetInteraction(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := uuid.Parse(vars["id"])
@@ -78,6 +99,17 @@ func (h *InteractionHandler) GetInteraction(w http.ResponseWriter, r *http.Reque
 }
 
 // GetUserVideoInteractions handles retrieving all interactions between a user and a video
+// @Summary Get all interactions between a user and a video
+// @Description Get all interactions for a specific user and video combination
+// @Tags interactions
+// @Accept json
+// @Produce json
+// @Param userID path string true "User ID"
+// @Param videoID path string true "Video ID"
+// @Success 200 {array} models.Interaction
+// @Failure 400 {string} string "Invalid user or video ID"
+// @Failure 500 {string} string "Internal server error"
+// @Router /users/{userID}/videos/{videoID}/interactions [get]
 func (h *InteractionHandler) GetUserVideoInteractions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID, err := uuid.Parse(vars["userID"])
@@ -103,6 +135,17 @@ func (h *InteractionHandler) GetUserVideoInteractions(w http.ResponseWriter, r *
 }
 
 // UpdateInteraction handles updating an existing interaction
+// @Summary Update an interaction
+// @Description Update an existing interaction
+// @Tags interactions
+// @Accept json
+// @Produce json
+// @Param id path string true "Interaction ID"
+// @Param interaction body models.Interaction true "Updated interaction object"
+// @Success 200 {object} models.Interaction
+// @Failure 400 {string} string "Invalid interaction ID or data"
+// @Failure 500 {string} string "Internal server error"
+// @Router /interactions/{id} [put]
 func (h *InteractionHandler) UpdateInteraction(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := uuid.Parse(vars["id"])
@@ -128,6 +171,16 @@ func (h *InteractionHandler) UpdateInteraction(w http.ResponseWriter, r *http.Re
 }
 
 // DeleteInteraction handles removing an interaction
+// @Summary Delete an interaction
+// @Description Delete an existing interaction
+// @Tags interactions
+// @Accept json
+// @Produce json
+// @Param id path string true "Interaction ID"
+// @Success 204 "No Content"
+// @Failure 400 {string} string "Invalid interaction ID"
+// @Failure 500 {string} string "Internal server error"
+// @Router /interactions/{id} [delete]
 func (h *InteractionHandler) DeleteInteraction(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := uuid.Parse(vars["id"])
@@ -145,17 +198,17 @@ func (h *InteractionHandler) DeleteInteraction(w http.ResponseWriter, r *http.Re
 		return
 	}
 	if interaction.Type == models.Like {
-		if err := h.videoService.ChangeLikesAmount(interaction.VideoID,1); err != nil {
+		if err := h.videoService.ChangeLikesAmount(interaction.VideoID, 1); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 	} else if interaction.Type == models.View {
-		if err := h.videoService.ChangeViewsAmount(interaction.VideoID,1); err != nil {
+		if err := h.videoService.ChangeViewsAmount(interaction.VideoID, 1); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 	} else if interaction.Type == models.Comment {
-		if err := h.videoService.ChangeCommentsAmount(interaction.VideoID,1); err != nil {
+		if err := h.videoService.ChangeCommentsAmount(interaction.VideoID, 1); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -164,6 +217,16 @@ func (h *InteractionHandler) DeleteInteraction(w http.ResponseWriter, r *http.Re
 }
 
 // ListInteractions handles retrieving a list of interactions with pagination
+// @Summary List all interactions
+// @Description Get a paginated list of all interactions
+// @Tags interactions
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number"
+// @Param pageSize query int false "Number of items per page"
+// @Success 200 {array} models.Interaction
+// @Failure 500 {string} string "Internal server error"
+// @Router /interactions [get]
 func (h *InteractionHandler) ListInteractions(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
 	pageSize, _ := strconv.Atoi(r.URL.Query().Get("pageSize"))

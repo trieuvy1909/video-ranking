@@ -1,0 +1,581 @@
+definitions:
+  models.Interaction:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      type:
+        $ref: '#/definitions/models.InteractionType'
+      updated_at:
+        type: string
+      user_id:
+        type: string
+      video_id:
+        type: string
+    type: object
+  models.InteractionType:
+    enum:
+    - like
+    - dislike
+    - view
+    - comment
+    type: string
+    x-enum-varnames:
+    - Like
+    - Dislike
+    - View
+    - Comment
+  models.User:
+    properties:
+      avatar_url:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
+  models.Video:
+    properties:
+      comments:
+        type: integer
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      likes:
+        type: integer
+      score:
+        type: number
+      title:
+        type: string
+      updated_at:
+        type: string
+      url:
+        type: string
+      user_id:
+        type: string
+      views:
+        type: integer
+    type: object
+info:
+  contact: {}
+paths:
+  /interactions:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of all interactions
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Interaction'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: List all interactions
+      tags:
+      - interactions
+    post:
+      consumes:
+      - application/json
+      description: Create a new interaction between a user and a video
+      parameters:
+      - description: Interaction object
+        in: body
+        name: interaction
+        required: true
+        schema:
+          $ref: '#/definitions/models.Interaction'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Interaction'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+      summary: Create a new interaction
+      tags:
+      - interactions
+  /interactions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing interaction
+      parameters:
+      - description: Interaction ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Invalid interaction ID
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Delete an interaction
+      tags:
+      - interactions
+    get:
+      consumes:
+      - application/json
+      description: Get details of a specific interaction
+      parameters:
+      - description: Interaction ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Interaction'
+        "400":
+          description: Invalid interaction ID
+          schema:
+            type: string
+        "404":
+          description: Interaction not found
+          schema:
+            type: string
+      summary: Get an interaction by ID
+      tags:
+      - interactions
+    put:
+      consumes:
+      - application/json
+      description: Update an existing interaction
+      parameters:
+      - description: Interaction ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated interaction object
+        in: body
+        name: interaction
+        required: true
+        schema:
+          $ref: '#/definitions/models.Interaction'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Interaction'
+        "400":
+          description: Invalid interaction ID or data
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Update an interaction
+      tags:
+      - interactions
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of all users
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.User'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: List all users
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: Create a new user in the system
+      parameters:
+      - description: User object
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Create a new user
+      tags:
+      - users
+  /users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Invalid user ID
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Delete a user
+      tags:
+      - users
+    get:
+      consumes:
+      - application/json
+      description: Get details of a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Invalid user ID
+          schema:
+            type: string
+        "404":
+          description: User not found
+          schema:
+            type: string
+      summary: Get a user by ID
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Update an existing user's information
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated user object
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Invalid user ID or data
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Update a user
+      tags:
+      - users
+  /users/{userID}/videos:
+    get:
+      consumes:
+      - application/json
+      description: Get all videos uploaded by a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Video'
+            type: array
+        "400":
+          description: Invalid user ID
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get all videos by user ID
+      tags:
+      - videos
+  /users/{userID}/videos/{videoID}/interactions:
+    get:
+      consumes:
+      - application/json
+      description: Get all interactions for a specific user and video combination
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: string
+      - description: Video ID
+        in: path
+        name: videoID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Interaction'
+            type: array
+        "400":
+          description: Invalid user or video ID
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get all interactions between a user and a video
+      tags:
+      - interactions
+  /videos:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of all videos
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Video'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: List all videos
+      tags:
+      - videos
+    post:
+      consumes:
+      - application/json
+      description: Create a new video in the system
+      parameters:
+      - description: Video object
+        in: body
+        name: video
+        required: true
+        schema:
+          $ref: '#/definitions/models.Video'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Video'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Create a new video
+      tags:
+      - videos
+  /videos/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing video
+      parameters:
+      - description: Video ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Invalid video ID
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Delete a video
+      tags:
+      - videos
+    get:
+      consumes:
+      - application/json
+      description: Get details of a specific video
+      parameters:
+      - description: Video ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Video'
+        "400":
+          description: Invalid video ID
+          schema:
+            type: string
+        "404":
+          description: Video not found
+          schema:
+            type: string
+      summary: Get a video by ID
+      tags:
+      - videos
+    put:
+      consumes:
+      - application/json
+      description: Update an existing video's information
+      parameters:
+      - description: Video ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated video object
+        in: body
+        name: video
+        required: true
+        schema:
+          $ref: '#/definitions/models.Video'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Video'
+        "400":
+          description: Invalid video ID or data
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Update a video
+      tags:
+      - videos
+swagger: "2.0"

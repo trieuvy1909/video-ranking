@@ -3,21 +3,16 @@ package database
 import (
 	"log"
 	"os"
-
-	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"errors"
 )
 
 // ConnectDatabase establishes a connection to the MySQL database
 func ConnectDatabase() (*gorm.DB, error) {
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		log.Printf("Error loading .env file: %v", err)
-	}
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		log.Fatalf("DATABASE_URL environment variable is not set")
+		return nil, errors.New("DATABASE_URL environment variable is not set")
 	}
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})

@@ -22,7 +22,7 @@ WORKDIR /app
 
 # Copy binary from builder
 COPY --from=builder /app/video-api .
-COPY .env .
+COPY ../../.env .
 # Expose port
 EXPOSE 8080
 
