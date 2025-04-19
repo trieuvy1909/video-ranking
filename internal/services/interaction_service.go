@@ -7,7 +7,7 @@ import (
 )
 
 type InteractionService struct {
-	repo        *repositories.InteractionRepository
+	repo *repositories.InteractionRepository
 }
 
 // NewInteractionService creates a new interaction service

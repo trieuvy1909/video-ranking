@@ -74,3 +74,16 @@ func (r *VideoRepository) ChangeViews(id uuid.UUID, step int) error {
 func (r *VideoRepository) ChangeComments(id uuid.UUID, step int) error {
 	return r.db.Model(&models.Video{}).Where("id = ?", id).Update("comments", gorm.Expr("comments + ?", step)).Error
 }
+
+// FindTopViewedByUser retrieves the top 10 highest-scoring videos viewed by a specific user
+func (r *VideoRepository) FindTopViewedByUser(userID uuid.UUID, limit int) ([]models.Video, error) {
+	var videos []models.Video
+	err := r.db.Table("videos").
+		Select("videos.id,videos.score").
+		Joins("JOIN interactions ON interactions.video_id = videos.id").
+		Where("interactions.user_id = ? AND interactions.type = ?", userID, models.View).
+		Order("videos.score DESC").
+		Limit(limit).
+		Find(&videos).Error
+	return videos, err
+}

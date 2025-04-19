@@ -22,15 +22,17 @@ import (
 type InteractionHandler struct {
 	interactionService *services.InteractionService
 	videoService       *services.VideoService
-	userService       *services.UserService
+	userService        *services.UserService
+	queueServices      *services.QueueServices
 }
 
 // NewInteractionHandler creates a new interaction handler
-func NewInteractionHandler(interactionService *services.InteractionService, videoService *services.VideoService, userService *services.UserService) *InteractionHandler {
+func NewInteractionHandler(interactionService *services.InteractionService, videoService *services.VideoService, userService *services.UserService, queueServices *services.QueueServices) *InteractionHandler {
 	return &InteractionHandler{
 		interactionService: interactionService,
 		videoService:       videoService,
-		userService:       userService,
+		userService:        userService,
+		queueServices:      queueServices,
 	}
 }
 
@@ -65,14 +67,14 @@ func (h *InteractionHandler) CreateInteraction(w http.ResponseWriter, r *http.Re
 		VideoID: interaction.VideoID,
 		Type:    interaction.Type,
 	}
-	
+
 	// Check if UserID exists
-	if _, err := h.userService.GetUser(interactionModel.UserID); err!= nil {
+	if _, err := h.userService.GetUser(interactionModel.UserID); err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
 	// Check if VideoID exists
-	if _, err := h.videoService.GetVideo(interaction.VideoID); err!= nil {
+	if _, err := h.videoService.GetVideo(interaction.VideoID); err != nil {
 		http.Error(w, "Video not found", http.StatusNotFound)
 		return
 	}
@@ -80,23 +82,15 @@ func (h *InteractionHandler) CreateInteraction(w http.ResponseWriter, r *http.Re
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if interaction.Type == models.Like {
-		if err := h.videoService.ChangeLikesAmount(interaction.VideoID, 1); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-	} else if interaction.Type == models.View {
-		if err := h.videoService.ChangeViewsAmount(interaction.VideoID, 1); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-	} else if interaction.Type == models.Comment {
-		if err := h.videoService.ChangeCommentsAmount(interaction.VideoID, 1); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
+	interactionEvent := models.InteractionEvent{
+		VideoID: interaction.VideoID,
+		Type:    interaction.Type,
+		Step:    1,
 	}
-
+	if err := h.queueServices.EnqueueInteractionEvent(interactionEvent); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(interaction)
 }
@@ -201,11 +195,11 @@ func (h *InteractionHandler) UpdateInteraction(w http.ResponseWriter, r *http.Re
 		return
 	}
 	interactionModel, err := h.interactionService.GetInteraction(id)
-	if err!= nil {
+	if err != nil {
 		http.Error(w, "Video not found", http.StatusNotFound)
 		return
 	}
-	interactionModel.Content =  interaction.Content
+	interactionModel.Content = interaction.Content
 	if err := h.interactionService.UpdateInteraction(interactionModel); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -242,21 +236,14 @@ func (h *InteractionHandler) DeleteInteraction(w http.ResponseWriter, r *http.Re
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	if interaction.Type == models.Like {
-		if err := h.videoService.ChangeLikesAmount(interaction.VideoID, -1); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-	} else if interaction.Type == models.View {
-		if err := h.videoService.ChangeViewsAmount(interaction.VideoID, -1); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-	} else if interaction.Type == models.Comment {
-		if err := h.videoService.ChangeCommentsAmount(interaction.VideoID, -1); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
+	interactionEvent := models.InteractionEvent{
+		VideoID: interaction.VideoID,
+		Type:    interaction.Type,
+		Step:    -1,
+	}
+	if err := h.queueServices.EnqueueInteractionEvent(interactionEvent); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -300,5 +287,5 @@ func (h *InteractionHandler) RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/interactions/{id}", h.UpdateInteraction).Methods("PUT")
 	r.HandleFunc("/interactions/{id}", h.DeleteInteraction).Methods("DELETE")
 	r.HandleFunc("/interactions", h.ListInteractions).Methods("GET")
-	r.HandleFunc("/users/{userID}/videos/{videoID}/interactions", h.GetUserVideoInteractions).Methods("GET")
+	r.HandleFunc("/interactions/{userID}/videos/{videoID}/interactions", h.GetUserVideoInteractions).Methods("GET")
 }

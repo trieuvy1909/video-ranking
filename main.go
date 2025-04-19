@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 	"github.com/pkg/browser"
 	"github.com/rs/cors"
-	"github.com/joho/godotenv"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"github.com/trieuvy/video-ranking/configs/database"
 	"github.com/trieuvy/video-ranking/configs/redis"
@@ -60,10 +60,15 @@ func main() {
 	userService := services.NewUserService(userRepo)
 	interactionService := services.NewInteractionService(interactionRepo)
 
+	// Start queue consumer
+	queue := make(chan models.InteractionEvent, 100)
+	queueServices := services.NewQueueServices(videoService, queue)
+	go services.QueueConsumer(queue, queueServices)
+
 	// Initialize handlers
 	videoHandler := handlers.NewVideoHandler(videoService)
 	userHandler := handlers.NewUserHandler(userService)
-	interactionHandler := handlers.NewInteractionHandler(interactionService, videoService, userService)
+	interactionHandler := handlers.NewInteractionHandler(interactionService, videoService, userService, queueServices)
 
 	// Initialize router
 	r := mux.NewRouter()

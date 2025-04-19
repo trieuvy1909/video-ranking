@@ -2,14 +2,15 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
-	"fmt"
 	"strings"
+
 	"github.com/go-playground/validator/v10"
-	"github.com/trieuvy/video-ranking/internal/models"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/trieuvy/video-ranking/internal/models"
 	"github.com/trieuvy/video-ranking/internal/params/request"
 	"github.com/trieuvy/video-ranking/internal/services"
 )
@@ -54,11 +55,11 @@ func (h *VideoHandler) CreateVideo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	videoModel := models.Video{
-		Title: video.Title,
+		Title:       video.Title,
 		Description: video.Description,
-		Views: 0,
-		Likes: 0,
-		Comments: 0,
+		Views:       0,
+		Likes:       0,
+		Comments:    0,
 	}
 	if err := h.videoService.CreateVideo(&videoModel); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -133,7 +134,7 @@ func (h *VideoHandler) UpdateVideo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	videoModel, err := h.videoService.GetVideo(id)
-	if err!= nil {
+	if err != nil {
 		http.Error(w, "Video not found", http.StatusNotFound)
 		return
 	}
@@ -175,6 +176,46 @@ func (h *VideoHandler) DeleteVideo(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// GetTopViewedVideosByUser handles retrieving the top N highest-scoring videos viewed by a user
+// @Summary Get top viewed videos by user
+// @Description Get the top N highest-scoring videos that a specific user has viewed
+// @Tags videos
+// @Accept json
+// @Produce json
+// @Param user_id path string true "User ID"
+// @Param limit query int false "Limit the number of results (default 10)"
+// @Success 200 {array} models.Video
+// @Failure 400 {string} string "Invalid user ID"
+// @Failure 500 {string} string "Internal server error"
+// @Router /users/{user_id}/viewed/top-videos [get]
+func (h *VideoHandler) GetTopViewedVideosByUser(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID, err := uuid.Parse(vars["user_id"])
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	limitStr := r.URL.Query().Get("limit")
+	limit := 10 // Default limit
+	if limitStr != "" {
+		limit, err = strconv.Atoi(limitStr)
+		if err != nil || limit <= 0 {
+			http.Error(w, "Invalid limit parameter", http.StatusBadRequest)
+			return
+		}
+	}
+
+	videos, err := h.videoService.GetTopViewedVideosByUser(userID, limit)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(videos)
+}
+
 // ListVideos handles retrieving a list of videos with pagination
 // @Summary List all videos
 // @Description Get a paginated list of all videos
@@ -214,6 +255,7 @@ func (h *VideoHandler) RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/videos/{id}", h.UpdateVideo).Methods("PUT")
 	r.HandleFunc("/videos/{id}", h.DeleteVideo).Methods("DELETE")
 	r.HandleFunc("/videos", h.ListVideos).Methods("GET")
+	r.HandleFunc("/users/{user_id}/viewed/top-videos", h.GetTopViewedVideosByUser).Methods("GET")
 }
 
 // ChangeLikesAmount handles changing the amount of likes for a video

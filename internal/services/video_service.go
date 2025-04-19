@@ -59,7 +59,7 @@ func (s *VideoService) DeleteVideo(id uuid.UUID) error {
 		log.Printf("Error removing video from Redis: %v", err)
 		return err
 	}
-	trendingVideos, err := s.getTop10TrendingVideos(ctx)
+	trendingVideos, err := s.GetTop10TrendingVideos(ctx)
 	if err != nil {
 		log.Printf("Error getting top trending videos: %v", err)
 		return err
@@ -71,6 +71,14 @@ func (s *VideoService) DeleteVideo(id uuid.UUID) error {
 		return err
 	}
 	return SendNotification(s.redisClient, "trending_videos", string(jsonData))
+}
+
+// GetTopViewedVideosByUser retrieves the top N highest-scoring videos viewed by a specific user
+func (s *VideoService) GetTopViewedVideosByUser(userID uuid.UUID, limit int) ([]models.Video, error) {
+	if limit <= 0 {
+		limit = 10 // Default limit
+	}
+	return s.repo.FindTopViewedByUser(userID, limit)
 }
 
 // ListVideos retrieves a list of videos with pagination
@@ -124,7 +132,7 @@ func (s *VideoService) UpdateAndNotifyRanking(ctx context.Context, videoID uuid.
 		return err
 	}
 
-	newScore := calculateEngagementScore(video.Views, video.Likes, video.Comments)
+	newScore := CalculateEngagementScore(video.Views, video.Likes, video.Comments)
 
 	err = s.UpdateVideoScore(videoID, newScore)
 	if err != nil {
@@ -140,7 +148,7 @@ func (s *VideoService) UpdateAndNotifyRanking(ctx context.Context, videoID uuid.
 		return err
 	}
 
-	trendingVideos, err := s.getTop10TrendingVideos(ctx)
+	trendingVideos, err := s.GetTop10TrendingVideos(ctx)
 	if err != nil {
 		log.Printf("Error getting top trending videos: %v", err)
 		return err
@@ -153,9 +161,8 @@ func (s *VideoService) UpdateAndNotifyRanking(ctx context.Context, videoID uuid.
 	}
 	return SendNotification(s.redisClient, "trending_videos", string(jsonData))
 }
-
-// calculateEngagementScore calculates engagement score
-func calculateEngagementScore(views, likes, comments int64) float64 {
+// CalculateEngagementScore calculates engagement score
+func CalculateEngagementScore(views, likes, comments int64) float64 {
 	// Weights for different engagement metrics
 	const (
 		viewWeight    = 1.0
@@ -176,7 +183,7 @@ func calculateEngagementScore(views, likes, comments int64) float64 {
 	return engagementScore
 }
 
-func (s *VideoService) getTop10TrendingVideos(ctx context.Context) ([]map[string]interface{}, error) {
+func (s *VideoService) GetTop10TrendingVideos(ctx context.Context) ([]map[string]interface{}, error) {
 	var trendingVideos []map[string]interface{}
 	results, err := s.redisClient.ZRevRangeWithScores(ctx, "video:scores", 0, 9).Result()
 	if err != nil {
