@@ -4,7 +4,6 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - DATABASE_URL=${DATABASE_URL}
     ports:
       - "3306:3306"
     volumes:
@@ -22,7 +21,7 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-h", "localhost", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -32,6 +31,8 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=${REDIS_URL}
     ports:
