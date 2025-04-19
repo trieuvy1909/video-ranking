@@ -13,7 +13,7 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o websocket-server ./cmd/websocket-server
+RUN go build -o video-api .
 
 # Final stage
 FROM alpine:latest
@@ -21,10 +21,10 @@ FROM alpine:latest
 WORKDIR /app
 
 # Copy binary from builder
-COPY --from=builder /app/websocket-server .
+COPY --from=builder /app/video-api .
+COPY .env .
+# Expose port
+EXPOSE 8080
 
-# Expose WebSocket port
-EXPOSE 8081
-
-# Run the server
-CMD ["./websocket-server"]
+# Run the application
+CMD ["./video-api"]

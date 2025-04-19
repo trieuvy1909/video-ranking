@@ -19,54 +19,81 @@ definitions:
   models.InteractionType:
     enum:
     - like
-    - dislike
     - view
     - comment
     type: string
     x-enum-varnames:
     - Like
-    - Dislike
     - View
     - Comment
-  models.User:
+  request.Interaction:
     properties:
-      avatar_url:
+      content:
+        maxLength: 1000
         type: string
-      created_at:
+      type:
+        allOf:
+        - $ref: '#/definitions/models.InteractionType'
+        enum:
+        - like
+        - comment
+        - view
+      user_id:
         type: string
+      video_id:
+        type: string
+    required:
+    - type
+    - user_id
+    - video_id
+    type: object
+  request.User:
+    properties:
       email:
         type: string
-      id:
-        type: string
-      updated_at:
+      password:
+        minLength: 6
         type: string
       username:
+        maxLength: 50
+        minLength: 3
         type: string
+    required:
+    - email
+    - password
+    - username
     type: object
-  models.Video:
+  request.UserUpdate:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 6
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  request.Video:
     properties:
       comments:
         type: integer
-      created_at:
+      create_by:
         type: string
       description:
-        type: string
-      id:
         type: string
       likes:
         type: integer
       score:
         type: number
       title:
-        type: string
-      updated_at:
-        type: string
-      url:
-        type: string
-      user_id:
+        minLength: 3
         type: string
       views:
         type: integer
+    required:
+    - create_by
+    - title
     type: object
 info:
   contact: {}
@@ -111,7 +138,7 @@ paths:
         name: interaction
         required: true
         schema:
-          $ref: '#/definitions/models.Interaction'
+          $ref: '#/definitions/request.Interaction'
       produces:
       - application/json
       responses:
@@ -169,7 +196,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Interaction'
+            $ref: '#/definitions/request.Interaction'
         "400":
           description: Invalid interaction ID
           schema:
@@ -196,14 +223,14 @@ paths:
         name: interaction
         required: true
         schema:
-          $ref: '#/definitions/models.Interaction'
+          $ref: '#/definitions/request.Interaction'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Interaction'
+            $ref: '#/definitions/request.Interaction'
         "400":
           description: Invalid interaction ID or data
           schema:
@@ -236,7 +263,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.User'
+              $ref: '#/definitions/request.User'
             type: array
         "500":
           description: Internal server error
@@ -255,14 +282,14 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/models.User'
+          $ref: '#/definitions/request.User'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.User'
+            $ref: '#/definitions/request.User'
         "400":
           description: Bad request
           schema:
@@ -317,7 +344,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.User'
+            $ref: '#/definitions/request.User'
         "400":
           description: Invalid user ID
           schema:
@@ -344,14 +371,14 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/models.User'
+          $ref: '#/definitions/request.UserUpdate'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.User'
+            $ref: '#/definitions/request.User'
         "400":
           description: Invalid user ID or data
           schema:
@@ -363,37 +390,6 @@ paths:
       summary: Update a user
       tags:
       - users
-  /users/{userID}/videos:
-    get:
-      consumes:
-      - application/json
-      description: Get all videos uploaded by a specific user
-      parameters:
-      - description: User ID
-        in: path
-        name: userID
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.Video'
-            type: array
-        "400":
-          description: Invalid user ID
-          schema:
-            type: string
-        "500":
-          description: Internal server error
-          schema:
-            type: string
-      summary: Get all videos by user ID
-      tags:
-      - videos
   /users/{userID}/videos/{videoID}/interactions:
     get:
       consumes:
@@ -451,7 +447,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.Video'
+              $ref: '#/definitions/request.Video'
             type: array
         "500":
           description: Internal server error
@@ -470,14 +466,14 @@ paths:
         name: video
         required: true
         schema:
-          $ref: '#/definitions/models.Video'
+          $ref: '#/definitions/request.Video'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Video'
+            $ref: '#/definitions/request.Video'
         "400":
           description: Bad request
           schema:
@@ -532,7 +528,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Video'
+            $ref: '#/definitions/request.Video'
         "400":
           description: Invalid video ID
           schema:
@@ -559,14 +555,14 @@ paths:
         name: video
         required: true
         schema:
-          $ref: '#/definitions/models.Video'
+          $ref: '#/definitions/request.Video'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Video'
+            $ref: '#/definitions/request.Video'
         "400":
           description: Invalid video ID or data
           schema:
@@ -576,6 +572,108 @@ paths:
           schema:
             type: string
       summary: Update a video
+      tags:
+      - videos
+  /videos/{id}/comments:
+    patch:
+      consumes:
+      - application/json
+      description: Change the number of comments for a specific video
+      parameters:
+      - description: Video ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Step
+        in: query
+        name: step
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Comments amount changed
+          schema:
+            type: string
+        "400":
+          description: Invalid video ID or step
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Change comments amount
+      tags:
+      - videos
+  /videos/{id}/likes:
+    patch:
+      consumes:
+      - application/json
+      description: Change the number of likes for a specific video
+      parameters:
+      - description: Video ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Step
+        in: query
+        name: step
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Likes amount changed
+          schema:
+            type: string
+        "400":
+          description: Invalid video ID or step
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Change likes amount
+      tags:
+      - videos
+  /videos/{id}/views:
+    patch:
+      consumes:
+      - application/json
+      description: Change the number of views for a specific video
+      parameters:
+      - description: Video ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Step
+        in: query
+        name: step
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Views amount changed
+          schema:
+            type: string
+        "400":
+          description: Invalid video ID or step
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Change views amount
       tags:
       - videos
 swagger: "2.0"

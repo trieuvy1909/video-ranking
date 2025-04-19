@@ -2,13 +2,18 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/trieuvy/video-ranking/internal/models"
+	"github.com/trieuvy/video-ranking/internal/params/request"
 	"github.com/trieuvy/video-ranking/internal/services"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // UserHandler handles HTTP requests for users
@@ -29,19 +34,39 @@ func NewUserHandler(userService *services.UserService) *UserHandler {
 // @Tags users
 // @Accept json
 // @Produce json
-// @Param user body models.User true "User object"
-// @Success 200 {object} models.User
+// @Param user body request.User true "User object"
+// @Success 200 {object} request.User
 // @Failure 400 {string} string "Bad request"
 // @Failure 500 {string} string "Internal server error"
 // @Router /users [post]
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	var user models.User
+	var user request.User
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if err := h.userService.CreateUser(&user); err != nil {
+	var validate = validator.New()
+	err := validate.Struct(user)
+	if err != nil {
+		var sb strings.Builder
+		for _, e := range err.(validator.ValidationErrors) {
+			sb.WriteString(fmt.Sprintf("Field '%s' failed on the '%s' rule\n", e.Field(), e.Tag()))
+		}
+		http.Error(w, sb.String(), http.StatusBadRequest)
+		return
+	}
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		http.Error(w, "Error hashing password", http.StatusInternalServerError)
+		return
+	}
+	userModel := models.User{
+		Email:    user.Email,
+		Username: user.Username,
+		Password: string(passwordHash),
+	}
+	if err := h.userService.CreateUser(&userModel); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -57,7 +82,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "User ID"
-// @Success 200 {object} models.User
+// @Success 200 {object} request.User
 // @Failure 400 {string} string "Invalid user ID"
 // @Failure 404 {string} string "User not found"
 // @Router /users/{id} [get]
@@ -86,8 +111,8 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "User ID"
-// @Param user body models.User true "Updated user object"
-// @Success 200 {object} models.User
+// @Param user body request.UserUpdate true "Updated user object"
+// @Success 200 {object} request.User
 // @Failure 400 {string} string "Invalid user ID or data"
 // @Failure 500 {string} string "Internal server error"
 // @Router /users/{id} [put]
@@ -99,14 +124,34 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user models.User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+	var user request.UserUpdate
+	if err = json.NewDecoder(r.Body).Decode(&user); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	user.ID = id
-	if err := h.userService.UpdateUser(&user); err != nil {
+	var validate = validator.New()
+	err = validate.Struct(user)
+	if err != nil {
+		var sb strings.Builder
+		for _, e := range err.(validator.ValidationErrors) {
+			sb.WriteString(fmt.Sprintf("Field '%s' failed on the '%s' rule\n", e.Field(), e.Tag()))
+		}
+		http.Error(w, sb.String(), http.StatusBadRequest)
+		return
+	}
+	userModel, err := h.userService.GetUser(id)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+	userModel.Email = user.Email
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		http.Error(w, "Error hashing password", http.StatusInternalServerError)
+		return
+	}
+	userModel.Password = string(passwordHash)
+	if err := h.userService.UpdateUser(userModel); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -150,7 +195,7 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Number of items per page"
-// @Success 200 {array} models.User
+// @Success 200 {array} request.User
 // @Failure 500 {string} string "Internal server error"
 // @Router /users [get]
 func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {

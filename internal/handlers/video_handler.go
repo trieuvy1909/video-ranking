@@ -4,10 +4,13 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-
+	"fmt"
+	"strings"
+	"github.com/go-playground/validator/v10"
+	"github.com/trieuvy/video-ranking/internal/models"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/trieuvy/video-ranking/internal/models"
+	"github.com/trieuvy/video-ranking/internal/params/request"
 	"github.com/trieuvy/video-ranking/internal/services"
 )
 
@@ -29,19 +32,35 @@ func NewVideoHandler(videoService *services.VideoService) *VideoHandler {
 // @Tags videos
 // @Accept json
 // @Produce json
-// @Param video body models.Video true "Video object"
-// @Success 200 {object} models.Video
+// @Param video body request.Video true "Video object"
+// @Success 200 {object} request.Video
 // @Failure 400 {string} string "Bad request"
 // @Failure 500 {string} string "Internal server error"
 // @Router /videos [post]
 func (h *VideoHandler) CreateVideo(w http.ResponseWriter, r *http.Request) {
-	var video models.Video
+	var video request.Video
 	if err := json.NewDecoder(r.Body).Decode(&video); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	if err := h.videoService.CreateVideo(&video); err != nil {
+	var validate = validator.New()
+	err := validate.Struct(video)
+	if err != nil {
+		var sb strings.Builder
+		for _, e := range err.(validator.ValidationErrors) {
+			sb.WriteString(fmt.Sprintf("Field '%s' failed on the '%s' rule\n", e.Field(), e.Tag()))
+		}
+		http.Error(w, sb.String(), http.StatusBadRequest)
+		return
+	}
+	videoModel := models.Video{
+		Title: video.Title,
+		Description: video.Description,
+		Views: 0,
+		Likes: 0,
+		Comments: 0,
+	}
+	if err := h.videoService.CreateVideo(&videoModel); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -57,7 +76,7 @@ func (h *VideoHandler) CreateVideo(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Video ID"
-// @Success 200 {object} models.Video
+// @Success 200 {object} request.Video
 // @Failure 400 {string} string "Invalid video ID"
 // @Failure 404 {string} string "Video not found"
 // @Router /videos/{id} [get]
@@ -79,35 +98,6 @@ func (h *VideoHandler) GetVideo(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(video)
 }
 
-// GetUserVideos handles retrieving all videos by a user
-// @Summary Get all videos by user ID
-// @Description Get all videos uploaded by a specific user
-// @Tags videos
-// @Accept json
-// @Produce json
-// @Param userID path string true "User ID"
-// @Success 200 {array} models.Video
-// @Failure 400 {string} string "Invalid user ID"
-// @Failure 500 {string} string "Internal server error"
-// @Router /users/{userID}/videos [get]
-func (h *VideoHandler) GetUserVideos(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	userID, err := uuid.Parse(vars["userID"])
-	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
-		return
-	}
-
-	videos, err := h.videoService.GetUserVideos(userID)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(videos)
-}
-
 // UpdateVideo handles updating an existing video
 // @Summary Update a video
 // @Description Update an existing video's information
@@ -115,27 +105,41 @@ func (h *VideoHandler) GetUserVideos(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Video ID"
-// @Param video body models.Video true "Updated video object"
-// @Success 200 {object} models.Video
+// @Param video body request.Video true "Updated video object"
+// @Success 200 {object} request.Video
 // @Failure 400 {string} string "Invalid video ID or data"
 // @Failure 500 {string} string "Internal server error"
 // @Router /videos/{id} [put]
 func (h *VideoHandler) UpdateVideo(w http.ResponseWriter, r *http.Request) {
+	var video request.Video
 	vars := mux.Vars(r)
 	id, err := uuid.Parse(vars["id"])
 	if err != nil {
 		http.Error(w, "Invalid video ID", http.StatusBadRequest)
 		return
 	}
-
-	var video models.Video
-	if err := json.NewDecoder(r.Body).Decode(&video); err != nil {
+	if err = json.NewDecoder(r.Body).Decode(&video); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	video.ID = id
-	if err := h.videoService.UpdateVideo(&video); err != nil {
+	var validate = validator.New()
+	err = validate.Struct(video)
+	if err != nil {
+		var sb strings.Builder
+		for _, e := range err.(validator.ValidationErrors) {
+			sb.WriteString(fmt.Sprintf("Field '%s' failed on the '%s' rule\n", e.Field(), e.Tag()))
+		}
+		http.Error(w, sb.String(), http.StatusBadRequest)
+		return
+	}
+	videoModel, err := h.videoService.GetVideo(id)
+	if err!= nil {
+		http.Error(w, "Video not found", http.StatusNotFound)
+		return
+	}
+	videoModel.Title = video.Title
+	videoModel.Description = video.Description
+	if err := h.videoService.UpdateVideo(videoModel); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -179,7 +183,7 @@ func (h *VideoHandler) DeleteVideo(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param page query int false "Page number"
 // @Param pageSize query int false "Number of items per page"
-// @Success 200 {array} models.Video
+// @Success 200 {array} request.Video
 // @Failure 500 {string} string "Internal server error"
 // @Router /videos [get]
 func (h *VideoHandler) ListVideos(w http.ResponseWriter, r *http.Request) {
@@ -210,5 +214,109 @@ func (h *VideoHandler) RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/videos/{id}", h.UpdateVideo).Methods("PUT")
 	r.HandleFunc("/videos/{id}", h.DeleteVideo).Methods("DELETE")
 	r.HandleFunc("/videos", h.ListVideos).Methods("GET")
-	r.HandleFunc("/users/{userID}/videos", h.GetUserVideos).Methods("GET")
+}
+
+// ChangeLikesAmount handles changing the amount of likes for a video
+// @Summary Change likes amount
+// @Description Change the number of likes for a specific video
+// @Tags videos
+// @Accept json
+// @Produce json
+// @Param id path string true "Video ID"
+// @Param step query int true "Step"
+// @Success 200 {string} string "Likes amount changed"
+// @Failure 400 {string} string "Invalid video ID or step"
+// @Failure 500 {string} string "Internal server error"
+// @Router /videos/{id}/likes [patch]
+func (h *VideoHandler) ChangeLikesAmount(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := uuid.Parse(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid video ID", http.StatusBadRequest)
+		return
+	}
+
+	step, err := strconv.Atoi(r.URL.Query().Get("step"))
+	if err != nil {
+		http.Error(w, "Invalid step", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.videoService.ChangeLikesAmount(id, step); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Likes amount changed"))
+}
+
+// ChangeViewsAmount handles changing the amount of views for a video
+// @Summary Change views amount
+// @Description Change the number of views for a specific video
+// @Tags videos
+// @Accept json
+// @Produce json
+// @Param id path string true "Video ID"
+// @Param step query int true "Step"
+// @Success 200 {string} string "Views amount changed"
+// @Failure 400 {string} string "Invalid video ID or step"
+// @Failure 500 {string} string "Internal server error"
+// @Router /videos/{id}/views [patch]
+func (h *VideoHandler) ChangeViewsAmount(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := uuid.Parse(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid video ID", http.StatusBadRequest)
+		return
+	}
+
+	step, err := strconv.Atoi(r.URL.Query().Get("step"))
+	if err != nil {
+		http.Error(w, "Invalid step", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.videoService.ChangeViewsAmount(id, step); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Views amount changed"))
+}
+
+// ChangeCommentsAmount handles changing the amount of comments for a video
+// @Summary Change comments amount
+// @Description Change the number of comments for a specific video
+// @Tags videos
+// @Accept json
+// @Produce json
+// @Param id path string true "Video ID"
+// @Param step query int true "Step"
+// @Success 200 {string} string "Comments amount changed"
+// @Failure 400 {string} string "Invalid video ID or step"
+// @Failure 500 {string} string "Internal server error"
+// @Router /videos/{id}/comments [patch]
+func (h *VideoHandler) ChangeCommentsAmount(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := uuid.Parse(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid video ID", http.StatusBadRequest)
+		return
+	}
+
+	step, err := strconv.Atoi(r.URL.Query().Get("step"))
+	if err != nil {
+		http.Error(w, "Invalid step", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.videoService.ChangeCommentsAmount(id, step); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Comments amount changed"))
 }

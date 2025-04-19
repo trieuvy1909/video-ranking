@@ -21,7 +21,7 @@ go.work
 # Go Debug/Release binary
 /debug
 /release
-/cmd/video-api/video-api
+/video-api
 /cmd/websocket-server/websocket-server
 
 ### Environment Files ###

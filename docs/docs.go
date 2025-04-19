@@ -79,7 +79,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Interaction"
+                            "$ref": "#/definitions/request.Interaction"
                         }
                     }
                 ],
@@ -125,7 +125,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Interaction"
+                            "$ref": "#/definitions/request.Interaction"
                         }
                     },
                     "400": {
@@ -168,7 +168,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Interaction"
+                            "$ref": "#/definitions/request.Interaction"
                         }
                     }
                 ],
@@ -176,7 +176,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Interaction"
+                            "$ref": "#/definitions/request.Interaction"
                         }
                     },
                     "400": {
@@ -266,7 +266,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.User"
+                                "$ref": "#/definitions/request.User"
                             }
                         }
                     },
@@ -297,7 +297,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "$ref": "#/definitions/request.User"
                         }
                     }
                 ],
@@ -305,7 +305,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "$ref": "#/definitions/request.User"
                         }
                     },
                     "400": {
@@ -349,7 +349,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "$ref": "#/definitions/request.User"
                         }
                     },
                     "400": {
@@ -392,7 +392,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "$ref": "#/definitions/request.UserUpdate"
                         }
                     }
                 ],
@@ -400,7 +400,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "$ref": "#/definitions/request.User"
                         }
                     },
                     "400": {
@@ -441,53 +441,6 @@ const docTemplate = `{
                 "responses": {
                     "204": {
                         "description": "No Content"
-                    },
-                    "400": {
-                        "description": "Invalid user ID",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/users/{userID}/videos": {
-            "get": {
-                "description": "Get all videos uploaded by a specific user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "videos"
-                ],
-                "summary": "Get all videos by user ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "userID",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Video"
-                            }
-                        }
                     },
                     "400": {
                         "description": "Invalid user ID",
@@ -591,7 +544,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.Video"
+                                "$ref": "#/definitions/request.Video"
                             }
                         }
                     },
@@ -622,7 +575,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Video"
+                            "$ref": "#/definitions/request.Video"
                         }
                     }
                 ],
@@ -630,7 +583,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Video"
+                            "$ref": "#/definitions/request.Video"
                         }
                     },
                     "400": {
@@ -674,7 +627,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Video"
+                            "$ref": "#/definitions/request.Video"
                         }
                     },
                     "400": {
@@ -717,7 +670,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Video"
+                            "$ref": "#/definitions/request.Video"
                         }
                     }
                 ],
@@ -725,7 +678,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Video"
+                            "$ref": "#/definitions/request.Video"
                         }
                     },
                     "400": {
@@ -781,6 +734,159 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/videos/{id}/comments": {
+            "patch": {
+                "description": "Change the number of comments for a specific video",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "videos"
+                ],
+                "summary": "Change comments amount",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Video ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Step",
+                        "name": "step",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Comments amount changed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid video ID or step",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/videos/{id}/likes": {
+            "patch": {
+                "description": "Change the number of likes for a specific video",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "videos"
+                ],
+                "summary": "Change likes amount",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Video ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Step",
+                        "name": "step",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Likes amount changed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid video ID or step",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/videos/{id}/views": {
+            "patch": {
+                "description": "Change the number of views for a specific video",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "videos"
+                ],
+                "summary": "Change views amount",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Video ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Step",
+                        "name": "step",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Views amount changed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid video ID or step",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -814,53 +920,99 @@ const docTemplate = `{
             "type": "string",
             "enum": [
                 "like",
-                "dislike",
                 "view",
                 "comment"
             ],
             "x-enum-varnames": [
                 "Like",
-                "Dislike",
                 "View",
                 "Comment"
             ]
         },
-        "models.User": {
+        "request.Interaction": {
             "type": "object",
+            "required": [
+                "type",
+                "user_id",
+                "video_id"
+            ],
             "properties": {
-                "avatar_url": {
+                "content": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "type": {
+                    "enum": [
+                        "like",
+                        "comment",
+                        "view"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.InteractionType"
+                        }
+                    ]
+                },
+                "user_id": {
                     "type": "string"
                 },
-                "created_at": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "username": {
+                "video_id": {
                     "type": "string"
                 }
             }
         },
-        "models.Video": {
+        "request.User": {
             "type": "object",
+            "required": [
+                "email",
+                "password",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 6
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 3
+                }
+            }
+        },
+        "request.UserUpdate": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 6
+                }
+            }
+        },
+        "request.Video": {
+            "type": "object",
+            "required": [
+                "create_by",
+                "title"
+            ],
             "properties": {
                 "comments": {
                     "type": "integer"
                 },
-                "created_at": {
+                "create_by": {
                     "type": "string"
                 },
                 "description": {
-                    "type": "string"
-                },
-                "id": {
                     "type": "string"
                 },
                 "likes": {
@@ -870,16 +1022,8 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "title": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 3
                 },
                 "views": {
                     "type": "integer"
@@ -890,17 +1034,17 @@ const docTemplate = `{
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
-var SwaggerSpec = &swag.Spec{
-    Version:          "",
-    Host:             "",
-    BasePath:         "",
-    Schemes:          []string{},
-    Title:            "",
-    Description:      "",
-    InfoInstanceName: "swagger",
-    SwaggerTemplate:  docTemplate,
+var SwaggerInfo = &swag.Spec{
+	Version:          "",
+	Host:             "",
+	BasePath:         "",
+	Schemes:          []string{},
+	Title:            "",
+	Description:      "",
+	InfoInstanceName: "swagger",
+	SwaggerTemplate:  docTemplate,
 }
 
 func init() {
-    swag.Register(SwaggerSpec.InstanceName(), SwaggerSpec)
+	swag.Register(SwaggerInfo.InstanceName(), SwaggerInfo)
 }

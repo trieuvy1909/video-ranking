@@ -10,8 +10,9 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/joho/godotenv"
+	"github.com/pkg/browser"
 	"github.com/rs/cors"
+	"github.com/joho/godotenv"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"github.com/trieuvy/video-ranking/configs/database"
 	"github.com/trieuvy/video-ranking/configs/redis"
@@ -20,11 +21,12 @@ import (
 	"github.com/trieuvy/video-ranking/internal/models"
 	"github.com/trieuvy/video-ranking/internal/repositories"
 	"github.com/trieuvy/video-ranking/internal/services"
+	"github.com/trieuvy/video-ranking/internal/ws"
 )
 
 func main() {
 	// Load environment variables
-	if err := godotenv.Load("../../.env"); err != nil {
+	if err := godotenv.Load(".env"); err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 	log.Println("Environment variables loaded successfully")
@@ -61,7 +63,7 @@ func main() {
 	// Initialize handlers
 	videoHandler := handlers.NewVideoHandler(videoService)
 	userHandler := handlers.NewUserHandler(userService)
-	interactionHandler := handlers.NewInteractionHandler(interactionService, videoService)
+	interactionHandler := handlers.NewInteractionHandler(interactionService, videoService, userService)
 
 	// Initialize router
 	r := mux.NewRouter()
@@ -101,10 +103,16 @@ func main() {
 		}
 	}()
 
+	go func() {
+		time.Sleep(1 * time.Second)
+		_ = browser.OpenURL("http://localhost:8080/swagger/index.html")
+	}()
+
 	// Handle graceful shutdown
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
+	r.HandleFunc("/ws", ws.WsHandler).Methods("GET")
 	<-sigChan
 	log.Println("Shutting down server...")
 

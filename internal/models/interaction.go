@@ -2,8 +2,9 @@ package models
 
 import (
 	"time"
- 	"gorm.io/gorm"
+
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 // InteractionType represents the type of interaction
@@ -11,7 +12,6 @@ type InteractionType string
 
 const (
 	Like    InteractionType = "like"
-	Dislike InteractionType = "dislike"
 	View    InteractionType = "view"
 	Comment InteractionType = "comment"
 )
@@ -26,9 +26,16 @@ type Interaction struct {
 	CreatedAt time.Time       `json:"created_at"`
 	UpdatedAt time.Time       `json:"updated_at"`
 }
+
+func (v *Interaction) BeforeUpdate(tx *gorm.DB) error {
+	v.UpdatedAt = time.Now()
+	return nil
+}
 func (v *Interaction) BeforeCreate(tx *gorm.DB) error {
-    if v.ID == uuid.Nil {
-        v.ID = uuid.New()
-    }
-    return nil
+	if v.ID == uuid.Nil {
+		v.ID = uuid.New()
+	}
+	v.CreatedAt = time.Now()
+	v.UpdatedAt = time.Now()
+	return nil
 }

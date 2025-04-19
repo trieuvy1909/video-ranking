@@ -30,24 +30,12 @@ services:
   video-api:
     build:
       context: .
-      dockerfile: cmd/video-api/Dockerfile
+      dockerfile: Dockerfile
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=${REDIS_URL}
     ports:
       - "8080:8080"
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_started
-
-  websocket-server:
-    build:
-      context: .
-      dockerfile: cmd/websocket-server/Dockerfile
-    ports:
-      - "8081:8081"
     depends_on:
       mysql:
         condition: service_healthy

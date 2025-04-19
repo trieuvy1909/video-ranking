@@ -11,7 +11,6 @@ type Video struct {
 	ID          uuid.UUID `json:"id" gorm:"type:char(36);primary_key"`
 	Title       string    `json:"title" gorm:"size:255;not null"`
 	Description string    `json:"description" gorm:"type:text"`
-	URL         string    `json:"url" gorm:"size:255;not null"`
 	CreatedBy   uuid.UUID `json:"user_id" gorm:"type:char(36);not null"`
 	Views       int64     `json:"views" gorm:"default:0"`
 	Likes       int64     `json:"likes" gorm:"default:0"`
@@ -20,9 +19,15 @@ type Video struct {
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
+func (v *Video) BeforeUpdate(tx *gorm.DB) error {
+	v.UpdatedAt = time.Now()
+	return nil
+}
 func (v *Video) BeforeCreate(tx *gorm.DB) error {
-    if v.ID == uuid.Nil {
-        v.ID = uuid.New()
-    }
-    return nil
+	if v.ID == uuid.Nil {
+		v.ID = uuid.New()
+	}
+	v.CreatedAt = time.Now()
+	v.UpdatedAt = time.Now()
+	return nil
 }
