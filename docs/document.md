@@ -30,9 +30,28 @@ The system employs a queue to sequentially process interaction events, ensuring 
 
 3. **Event Processing**: `QueueConsumer` retrieves each event from the queue and processes it. During this process, functions in `videoService` are called to update data such as scores, likes, comments, and views of the video.
 
+### Real-time Ranking Updates
+
+When users interact with videos by liking, commenting, viewing, or removing likes and comments, the system begins calculating and updating the ranking in real-time. This is achieved through the use of a queue that processes interaction events sequentially, ensuring data is updated accurately and promptly.
+
+1. **Event Trigger**: Each interaction event, such as a like or comment, triggers a function in `videoService` to update the video's score and interaction count.
+2. **Queue Management**: These events are added to a queue managed by `QueueServices`, ensuring they are processed in the order they occur.
+3. **Real-time Processing**: `QueueConsumer` processes each event, calling the necessary functions in `videoService` to update the video's ranking metrics in real-time.
+
+This approach ensures that the ranking is always up-to-date, reflecting the latest user interactions.
+
 ### Benefits
 
 - **Consistency**: Ensures that events are processed in order, avoiding data conflicts.
 - **High Performance**: Reduces system load by processing events sequentially and in a controlled manner.
 
 Using a queue helps the system operate smoothly and efficiently, ensuring that data is always updated accurately and promptly.
+
+
+## Global Trending Ranking
+
+The global trending ranking is calculated based on the total number of interactions such as likes, comments, and views from all users. This ranking reflects the most popular videos across the entire platform, providing a snapshot of what is currently trending globally.
+
+## Personalized User Ranking
+
+The personalized user ranking is tailored to each individual user, considering only the videos that a specific user has interacted with. This ranking helps users discover content that is most relevant to their interests and viewing history.
