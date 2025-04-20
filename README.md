@@ -27,12 +27,6 @@ The Video Ranking application is designed to manage and rank videos based on use
 4. **Access the application**
    Open your browser and go to `http://localhost:8080/swagger/index.html` to view the API documentation.
 
-## Running Tests
-To ensure all components are working correctly, run the test suite:
-```bash
-go test ./...
-```
-
 ## Conclusion
 This README provides a quick overview of setting up and running the Video Ranking application. For detailed documentation, refer to the `docs/document.md` file.
 
